@@ -1,11 +1,20 @@
 {% extends 'base.html' %}
 
 {% block javascript %}
+    <script src="/static/js/joint.js"></script>
+    <script src="/static/js/joint.shapes.fsa.js"></script>
+
     <script src="/static/js/main.js"></script>
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="/static/css/joint.css">
 {% endblock %}
 
 {% block body %}
     <div id="main-container">
         <h2>Content will go here</h2>
+        <div id="paper">
+        </div>
     </div>
 {% endblock %}
