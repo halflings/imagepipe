@@ -1,0 +1,51 @@
+/* Some changes to bootstrap's styles */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: inherit;
+}
+
+h1, h2, h3 {
+  margin-top: 10px;
+}
+
+.panel-body {
+  padding: 2px 10px 10px;
+}
+
+body {
+  position: relative;
+}
+
+a:hover, a:active, a:focus {
+    outline: 0;
+    text-decoration: none !important;
+}
+
+.row {
+  margin: 0px 0px 0px -15px;
+}
+
+/* Styling */
+
+body {
+    background: url('../img/geometry.png') repeat;
+}
+
+.sitename {
+    color: #272930;
+}
+
+.sitename .glyphicon {
+    font-size: 73%;
+}
+
+#body-container {
+}
+
+#error-bar {
+    display: none;
+}
+
+#game-container {
+    margin: 10px auto;
+}
