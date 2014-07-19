@@ -1,19 +1,36 @@
+import abc
+
 # Ports
 
 class DataPort(object):
-    connection = None
     def __init__(self, component):
         self.component = component
+        self.connection = None
+        self._buffer = None
 
-class _InputPort(DataPort):
-    pass
-
-class _OutputPort(DataPort):
     def connect(self, port):
-        if not isinstance(port, _InputPort):
-            raise ValueError("An output port can only be connected to an input port.")
         self.connection = port
         port.conncetion = self
+
+class _InputPort(DataPort):
+    @property
+    def value(self):
+        return self._buffer
+
+    @value.setter
+    def value(self, value):
+        self._buffer = value
+
+class _OutputPort(DataPort):
+    @property
+    def value(self):
+        return self._buffer
+
+    @value.setter
+    def value(self, value):
+        self._buffer = value
+        if self.connection is not None:
+            self.connection.value = value
 
 def generate_port_class(parent_cls, port_name, *args, **kwargs):
     class NewClass(parent_cls):
@@ -31,8 +48,9 @@ def OutputPort(name, *args, **kwargs):
 
 # Components
 
-class ComponentMeta(type):
+class ComponentMeta(abc.ABCMeta):
     def __init__(cls, name, bases, attributes):
+        super(ComponentMeta, cls).__init__(name, bases, attributes)
         cls.__inputs__ = dict()
         cls.__outputs__ = dict()
         for attr_name, attr in attributes.iteritems():
@@ -54,32 +72,25 @@ class Component(object):
     def __init__(self, name):
         self.name = name
         # Initializing the ports' instances
-        for attr_name, attr in self.__inputs__.items() + self.__outputs__.items():
-            if issubclass(attr, DataPort):
-                setattr(self, attr_name, attr(self))
+        self.input_ports = []
+        self.output_ports = []
+        for attr_name, attr in self.__inputs__.items():
+            port = attr(self)
+            setattr(self, attr_name, port)
+            self.input_ports.append(port)
+        for attr_name, attr in self.__outputs__.items():
+            port = attr(self)
+            setattr(self, attr_name, port)
+            self.output_ports.append(port)
 
+    @abc.abstractmethod
     def process(self):
-        if not all(p.connection is not None for p in self.input_ports):
-            raise ValueError("Not all input ports are connected.")
+        if any(port.value is None for port in self.input_ports):
+            raise ValueError("Not all input ports' buffers are populated in {}.".format(self))
 
-# Example application
-if __name__ == '__main__':
-
-    class BlackWhite(Component):
-        colored_image = InputPort("Colored image")
-        black_and_white = OutputPort("Black and White image")
-
-    class Resize(Component):
-        original_image = InputPort("Original image")
-        resized_image = OutputPort("Resized image")
-
-    bw = BlackWhite('bw1')
-    resize = Resize('rsz1')
-    resize_bis = Resize('rsz2')
-
-    resize.resized_image.connect(bw.colored_image)
-
-    print "BlackWhite components description = {}".format(BlackWhite)
-    print ', '.join("{} = {}".format(comp.name, comp) for comp in [bw, resize, resize_bis])
-    port = resize.resized_image
-    print "{} is connected to {}, of component {}".format(port, port.connection, port.connection.component)
+    def process_all(self):
+        """naive/temporary way to process all components. can cause infinite recursion"""
+        self.process()
+        for port in self.output_ports:
+            if port.connection is not None:
+                port.connection.component.process_all()
